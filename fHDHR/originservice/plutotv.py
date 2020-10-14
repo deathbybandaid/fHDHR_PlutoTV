@@ -119,23 +119,23 @@ class fHDHRservice():
         return streamurl_base + "?" + urllib.parse.urlencode(paramdict)
 
     def m3u8_beststream(self, m3u8_url):
+        print(m3u8_url)
         bestStream = None
         videoUrlM3u = m3u8.load(m3u8_url)
-        if len(videoUrlM3u.playlists) > 0:
-            for videoStream in videoUrlM3u.playlists:
-                if bestStream is None:
-                    bestStream = videoStream
-                elif ((videoStream.stream_info.resolution[0] > bestStream.stream_info.resolution[0]) and
-                      (videoStream.stream_info.resolution[1] > bestStream.stream_info.resolution[1])):
-                    bestStream = videoStream
-                elif ((videoStream.stream_info.resolution[0] == bestStream.stream_info.resolution[0]) and
-                      (videoStream.stream_info.resolution[1] == bestStream.stream_info.resolution[1]) and
-                      (videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth)):
-                    bestStream = videoStream
-            if bestStream is not None:
-                return bestStream.absolute_uri
-        else:
+        if not len(videoUrlM3u.playlists):
             return m3u8_url
+        for videoStream in videoUrlM3u.playlists:
+            if bestStream is None:
+                bestStream = videoStream
+            elif ((videoStream.stream_info.resolution[0] > bestStream.stream_info.resolution[0]) and
+                  (videoStream.stream_info.resolution[1] > bestStream.stream_info.resolution[1])):
+                bestStream = videoStream
+            elif ((videoStream.stream_info.resolution[0] == bestStream.stream_info.resolution[0]) and
+                  (videoStream.stream_info.resolution[1] == bestStream.stream_info.resolution[1]) and
+                  (videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth)):
+                bestStream = videoStream
+        if bestStream is not None:
+            return bestStream.absolute_uri
 
     def update_epg(self):
         programguide = {}
@@ -156,7 +156,7 @@ class fHDHRservice():
                     url_end_time = xtdate.strftime('%Y-%m-%dT%H:00:00')
 
                 url = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (url_start_time, url_end_time)
-                result = self.get_cached(str(url_start_time), 3, url)
+                result = self.get_cached(url_start_time, 3, url)
 
                 for c in result:
 
@@ -203,6 +203,7 @@ class fHDHRservice():
         return programguide
 
     def get_cached(self, cache_key, delay, url):
+        cache_key = datetime.datetime.strptime(cache_key, '%Y-%m-%dT%H:%M:%S').timestamp()
         cache_path = self.web_cache_dir.joinpath(str(cache_key))
         if cache_path.is_file():
             print('FROM CACHE:', str(cache_path))
@@ -219,10 +220,10 @@ class fHDHRservice():
 
     def remove_stale_cache(self, todaydate):
         cache_clear_time = todaydate.strftime('%Y-%m-%dT%H:00:00')
-        cache_clear_time = datetime.datetime.strptime(cache_clear_time, '%Y-%m-%dT%H:%M:%S')
+        cache_clear_time = datetime.datetime.strptime(cache_clear_time, '%Y-%m-%dT%H:%M:%S').timestamp()
         for p in self.web_cache_dir.glob('*'):
             try:
-                cachedate = datetime.datetime.strptime(str(p.name), '%Y-%m-%dT%H:%M:%S')
+                cachedate = float(p.name)
                 if cachedate >= cache_clear_time:
                     continue
             except Exception as e:
