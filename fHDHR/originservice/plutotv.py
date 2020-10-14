@@ -119,23 +119,21 @@ class fHDHRservice():
         return streamurl_base + "?" + urllib.parse.urlencode(paramdict)
 
     def m3u8_beststream(self, m3u8_url):
-        print(m3u8_url)
         bestStream = None
         videoUrlM3u = m3u8.load(m3u8_url)
-        if not len(videoUrlM3u.playlists):
+        if not videoUrlM3u.is_variant:
             return m3u8_url
+
         for videoStream in videoUrlM3u.playlists:
-            if bestStream is None:
+            if not bestStream:
                 bestStream = videoStream
-            elif ((videoStream.stream_info.resolution[0] > bestStream.stream_info.resolution[0]) and
-                  (videoStream.stream_info.resolution[1] > bestStream.stream_info.resolution[1])):
+            elif videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth:
                 bestStream = videoStream
-            elif ((videoStream.stream_info.resolution[0] == bestStream.stream_info.resolution[0]) and
-                  (videoStream.stream_info.resolution[1] == bestStream.stream_info.resolution[1]) and
-                  (videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth)):
-                bestStream = videoStream
-        if bestStream is not None:
+
+        if not bestStream:
             return bestStream.absolute_uri
+        else:
+            return m3u8_url
 
     def update_epg(self):
         programguide = {}
