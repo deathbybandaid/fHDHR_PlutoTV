@@ -183,7 +183,7 @@ class fHDHRservice():
         return programguide
 
     def get_cached(self, cache_key, delay, url):
-        cache_path = self.web_cache_dir.joinpath(cache_key)
+        cache_path = self.web_cache_dir.joinpath(str(cache_key))
         if cache_path.is_file():
             print('FROM CACHE:', str(cache_path))
             with open(cache_path, 'rb') as f:
