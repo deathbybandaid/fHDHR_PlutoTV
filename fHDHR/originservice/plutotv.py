@@ -2,6 +2,7 @@ import time
 import json
 import datetime
 import urllib.parse
+import m3u8
 
 import fHDHR.tools
 
@@ -80,7 +81,7 @@ class fHDHRservice():
         streamurl = pluto_chandict["stitched"]["urls"][0]["url"]
         streamurl = self.channel_stream_url_cleanup(streamurl)
         if self.config.dict["origin"]["force_best"]:
-            streamurl = fHDHR.tools.m3u8_beststream(streamurl)
+            streamurl = self.m3u8_beststream(streamurl)
         streamdict = {"number": str(chandict["number"]), "stream_url": streamurl}
         streamlist.append(streamdict)
         return streamlist, caching
@@ -116,6 +117,25 @@ class fHDHRservice():
         paramdict["userId"] = self.userid or ''
 
         return streamurl_base + "?" + urllib.parse.urlencode(paramdict)
+
+    def m3u8_beststream(self, m3u8_url):
+        bestStream = None
+        videoUrlM3u = m3u8.load(m3u8_url)
+        if len(videoUrlM3u.playlists) > 0:
+            for videoStream in videoUrlM3u.playlists:
+                if bestStream is None:
+                    bestStream = videoStream
+                elif ((videoStream.stream_info.resolution[0] > bestStream.stream_info.resolution[0]) and
+                      (videoStream.stream_info.resolution[1] > bestStream.stream_info.resolution[1])):
+                    bestStream = videoStream
+                elif ((videoStream.stream_info.resolution[0] == bestStream.stream_info.resolution[0]) and
+                      (videoStream.stream_info.resolution[1] == bestStream.stream_info.resolution[1]) and
+                      (videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth)):
+                    bestStream = videoStream
+            if bestStream is not None:
+                return bestStream.absolute_uri
+        else:
+            return m3u8_url
 
     def update_epg(self):
         programguide = {}
