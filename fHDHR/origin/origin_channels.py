@@ -57,7 +57,8 @@ class OriginService():
 
             if (channel_dict["isStitched"]
                and channel_dict["visibility"] in ["everyone"]
-               and not channel_dict['onDemand']):
+               and not channel_dict['onDemand']
+               and channel_dict["name"] != "Announcement"):
 
                 clean_station_item = {
                                      "name": channel_dict["name"],

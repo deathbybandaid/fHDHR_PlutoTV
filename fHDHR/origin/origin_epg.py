@@ -25,13 +25,15 @@ class originEPG():
     def duration_pluto_minutes(self, induration):
         return ((int(induration))/1000/60)
 
-    def get_channel_thumbnail(self, channel_id):
-        channel_thumb_url = ("http://images.pluto.tv/channels/%s/logo.png" % str(channel_id))
-        return channel_thumb_url
+    def pluto_calculate_duration(self, start_time, end_time):
+        start_time = start_time.replace('Z', '+00:00')
+        start_time = datetime.datetime.fromisoformat(start_time)
 
-    def get_content_thumbnail(self, content_id):
-        item_thumb_url = ("https://images.pluto.tv/episodes/%s/poster.jpg" % str(content_id))
-        return item_thumb_url
+        end_time = end_time.replace('Z', '+00:00')
+        end_time = datetime.datetime.fromisoformat(end_time)
+
+        duration = (end_time - start_time).total_seconds() / 60
+        return duration
 
     def update_epg(self):
         programguide = {}
@@ -39,24 +41,30 @@ class originEPG():
         todaydate = datetime.datetime.utcnow().date()
         self.remove_stale_cache(todaydate)
 
-        for x in range(0, 6):
-            xdate = todaydate + datetime.timedelta(days=x)
-            xtdate = xdate + datetime.timedelta(days=1)
+        time_list = []
+        xtimestart = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+        xtimeend = xtimestart + datetime.timedelta(days=6)
+        xtime = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+        while xtime <= xtimeend:
+            guide_time = {
+                            "start": str(xtime.strftime('%Y-%m-%dT%H:00:00')),
+                            "end": str((xtime + datetime.timedelta(hours=8)).strftime('%Y-%m-%dT%H:00:00')),
+                            }
+            xtime = xtime + datetime.timedelta(hours=8)
+            time_list.append(guide_time)
 
-            for i in range(int(24 / 4)):
-                start_hour = (i * 4)
-                url_start_time = xdate.strftime('%Y-%m-%dT' + str("{:02d}".format(start_hour)) + ':00:00')
-                if start_hour + 4 < 24:
-                    url_end_time = xdate.strftime('%Y-%m-%dT' + str("{:02d}".format(start_hour + 4)) + ':00:00')
-                else:
-                    url_end_time = xtdate.strftime('%Y-%m-%dT%H:00:00')
+        for times in time_list:
+            url = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (times["start"], times["end"])
+            result = self.get_cached(times["start"], 3, url)
 
-                url = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (url_start_time, url_end_time)
-                result = self.get_cached(url_start_time, 3, url)
+            for c in result:
 
-                for c in result:
+                if (c["isStitched"]
+                   and c["visibility"] in ["everyone"]
+                   and not c['onDemand']
+                   and c["name"] != "Announcement"):
 
-                    cdict = fHDHR.tools.xmldictmaker(c, ["name", "number", "_id", "timelines"], list_items=["timelines"])
+                    cdict = fHDHR.tools.xmldictmaker(c, ["name", "number", "_id", "timelines", "colorLogoPNG"], list_items=["timelines"])
 
                     if str(cdict['number']) not in list(programguide.keys()):
 
@@ -65,19 +73,25 @@ class originEPG():
                                                                 "name": cdict["name"],
                                                                 "number": str(cdict["number"]),
                                                                 "id": cdict["_id"],
-                                                                "thumbnail": self.get_channel_thumbnail(cdict["_id"]),
+                                                                "thumbnail": cdict["colorLogoPNG"]["path"].split("?")[0],
                                                                 "listing": [],
                                                                 }
+
                     for program_item in cdict["timelines"]:
 
                         progdict = fHDHR.tools.xmldictmaker(program_item, ['_id', 'start', 'stop', 'title', 'episode'])
                         episodedict = fHDHR.tools.xmldictmaker(program_item['episode'], ['duration', 'poster', '_id', 'rating', 'description', 'genre', 'subGenre', 'name'])
 
+                        if not episodedict["duration"]:
+                            episodedict["duration"] = self.pluto_calculate_duration(progdict["start"], progdict["stop"])
+                        else:
+                            episodedict["duration"] = self.duration_pluto_minutes(episodedict["duration"])
+
                         clean_prog_dict = {
                                             "time_start": self.xmltimestamp_pluto(progdict["start"]),
                                             "time_end": self.xmltimestamp_pluto(progdict["stop"]),
-                                            "duration_minutes": self.duration_pluto_minutes(episodedict["duration"]),
-                                            "thumbnail": self.get_content_thumbnail(progdict["_id"]),
+                                            "duration_minutes": episodedict["duration"],
+                                            "thumbnail": episodedict["poster"]["path"].split("?")[0],
                                             "title": progdict['title'] or "Unavailable",
                                             "sub-title": episodedict['name'] or "Unavailable",
                                             "description": episodedict['description'] or "Unavailable",
@@ -127,3 +141,29 @@ class originEPG():
                 pass
             print('Removing stale cache file:', p.name)
             p.unlink()
+
+
+"""
+{
+'_id': '59112ec728324d66c1919050',
+'start': '2020-10-26T20:00:00.000Z',
+'stop': '2020-10-27T00:00:00.000Z',
+'title': 'Pluto TV Kids',
+'episode': {
+    '_id': '48b4cc72021777c916eec24c',
+    'number': 0,
+    'description': 'No information available',
+    'duration': 0,
+    'originalContentDuration': 0,
+    'genre': 'No information available',
+    'subGenre': 'No information available',
+    'distributeAs': {
+        'AVOD': False
+        },
+    'clip': {
+        'originalReleaseDate': '2020-10-21T02:56:29.896Z'
+        },
+    'rating': 'No Rating',
+    'name': 'Pluto TV Kids',
+    'slug': 'No information available',
+    'poster': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'firstAired': '2020-10-21T02:56:29.896Z', 'thumbnail': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'liveBroadcast': False, 'featuredImage': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'series': {'_id': '0b18ca494cf645a0595e15c2', 'name': 'Pluto TV Kids', 'slug': 'No information available', 'type': 'No information available', 'tile': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'description': 'No information available', 'summary': 'No information available', 'displayName': 'Pluto TV Kids', 'featuredImage': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}}}}"""
