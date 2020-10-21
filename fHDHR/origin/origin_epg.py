@@ -141,29 +141,3 @@ class originEPG():
                 pass
             print('Removing stale cache file:', p.name)
             p.unlink()
-
-
-"""
-{
-'_id': '59112ec728324d66c1919050',
-'start': '2020-10-26T20:00:00.000Z',
-'stop': '2020-10-27T00:00:00.000Z',
-'title': 'Pluto TV Kids',
-'episode': {
-    '_id': '48b4cc72021777c916eec24c',
-    'number': 0,
-    'description': 'No information available',
-    'duration': 0,
-    'originalContentDuration': 0,
-    'genre': 'No information available',
-    'subGenre': 'No information available',
-    'distributeAs': {
-        'AVOD': False
-        },
-    'clip': {
-        'originalReleaseDate': '2020-10-21T02:56:29.896Z'
-        },
-    'rating': 'No Rating',
-    'name': 'Pluto TV Kids',
-    'slug': 'No information available',
-    'poster': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'firstAired': '2020-10-21T02:56:29.896Z', 'thumbnail': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'liveBroadcast': False, 'featuredImage': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'series': {'_id': '0b18ca494cf645a0595e15c2', 'name': 'Pluto TV Kids', 'slug': 'No information available', 'type': 'No information available', 'tile': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}, 'description': 'No information available', 'summary': 'No information available', 'displayName': 'Pluto TV Kids', 'featuredImage': {'path': 'https://images.pluto.tv/channels/51c75f7bb6f26ba1cd00002f/featuredImage.jpg?w=1600&h=900&fm=jpg&q=75&fit=fill&fill=blur'}}}}"""
