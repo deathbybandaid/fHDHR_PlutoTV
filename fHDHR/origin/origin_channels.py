@@ -47,7 +47,10 @@ class OriginService():
         return True
 
     def get_status_dict(self):
-        ret_status_dict = {}
+        ret_status_dict = {
+                            "Login": "Success" if self.userid else "Guest Mode",
+                            "Username": self.config.dict["origin"]["username"],
+                            }
         return ret_status_dict
 
     def get_channels(self):
