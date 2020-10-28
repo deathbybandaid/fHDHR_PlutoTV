@@ -46,6 +46,10 @@ class OriginService():
         self.token = loginresp["accessToken"]
         return True
 
+    def get_status_dict(self):
+        ret_status_dict = {}
+        return ret_status_dict
+
     def get_channels(self):
 
         url = self.base_api_url + "/v2/channels.json"
