@@ -1,17 +1,16 @@
-import time
 import datetime
 import json
+import time
 
 import fHDHR.tools
 
 
-class originEPG():
+class OriginEPG():
 
-    def __init__(self, settings, channels):
+    def __init__(self, settings, logger, web):
         self.config = settings
-        self.channels = channels
-
-        self.web = fHDHR.tools.WebReq()
+        self.logger = logger
+        self.web = web
 
         self.base_api_url = 'https://api.pluto.tv'
         self.web_cache_dir = self.config.dict["filedir"]["epg_cache"]["origin"]["web_cache"]
@@ -35,7 +34,7 @@ class originEPG():
         duration = (end_time - start_time).total_seconds() / 60
         return duration
 
-    def update_epg(self):
+    def update_epg(self, fhdhr_channels):
         programguide = {}
 
         todaydate = datetime.datetime.utcnow().date()
@@ -73,9 +72,14 @@ class originEPG():
                                                                 "name": cdict["name"],
                                                                 "number": str(cdict["number"]),
                                                                 "id": cdict["_id"],
-                                                                "thumbnail": cdict["colorLogoPNG"]["path"].split("?")[0],
+                                                                "thumbnail": None,
                                                                 "listing": [],
                                                                 }
+                        try:
+                            thumbnail = cdict["colorLogoPNG"]["path"].split("?")[0]
+                        except TypeError:
+                            thumbnail = None
+                        programguide[str(cdict['number'])]["thumbnail"] = thumbnail
 
                     for program_item in cdict["timelines"]:
 
@@ -91,7 +95,7 @@ class originEPG():
                                             "time_start": self.xmltimestamp_pluto(progdict["start"]),
                                             "time_end": self.xmltimestamp_pluto(progdict["stop"]),
                                             "duration_minutes": episodedict["duration"],
-                                            "thumbnail": episodedict["poster"]["path"].split("?")[0],
+                                            "thumbnail": None,
                                             "title": progdict['title'] or "Unavailable",
                                             "sub-title": episodedict['name'] or "Unavailable",
                                             "description": episodedict['description'] or "Unavailable",
@@ -104,6 +108,11 @@ class originEPG():
                                             "isnew": False,
                                             "id": episodedict['_id'] or self.xmltimestamp_pluto(progdict["start"]),
                                             }
+                        try:
+                            thumbnail = episodedict["poster"]["path"].split("?")[0]
+                        except TypeError:
+                            thumbnail = None
+                        clean_prog_dict["thumbnail"] = thumbnail
 
                         clean_prog_dict["genres"].extend(episodedict["genre"].split(" \\u0026 "))
                         clean_prog_dict["genres"].append(episodedict["subGenre"])
@@ -116,11 +125,11 @@ class originEPG():
         cache_key = datetime.datetime.strptime(cache_key, '%Y-%m-%dT%H:%M:%S').timestamp()
         cache_path = self.web_cache_dir.joinpath(str(cache_key))
         if cache_path.is_file():
-            print('FROM CACHE:', str(cache_path))
+            self.logger.info('FROM CACHE:  ' + str(cache_path))
             with open(cache_path, 'rb') as f:
                 return json.load(f)
         else:
-            print('Fetching:  ', url)
+            self.logger.info('Fetching:  ' + url)
             urlopn = self.web.session.get(url)
             result = urlopn.json()
             with open(cache_path, 'wb') as f:
@@ -137,7 +146,7 @@ class originEPG():
                 if cachedate >= cache_clear_time:
                     continue
             except Exception as e:
-                print(e)
+                self.logger.error(e)
                 pass
-            print('Removing stale cache file:', p.name)
+            self.logger.info('Removing stale cache file:' + p.name)
             p.unlink()
