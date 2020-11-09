@@ -4,3 +4,4 @@ flask
 image
 xmltodict
 m3u8
+sqlalchemy
