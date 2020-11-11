@@ -7,13 +7,11 @@ import fHDHR.tools
 
 class OriginEPG():
 
-    def __init__(self, settings, logger, web):
-        self.config = settings
-        self.logger = logger
-        self.web = web
+    def __init__(self, fhdhr):
+        self.fhdhr = fhdhr
 
         self.base_api_url = 'https://api.pluto.tv'
-        self.web_cache_dir = self.config.dict["filedir"]["epg_cache"]["origin"]["web_cache"]
+        self.fhdhr.web_cache_dir = self.fhdhr.config.dict["filedir"]["epg_cache"]["origin"]["web_cache"]
 
     def xmltimestamp_pluto(self, inputtime):
         xmltime = inputtime.replace('Z', '+00:00')
@@ -123,14 +121,14 @@ class OriginEPG():
 
     def get_cached(self, cache_key, delay, url):
         cache_key = datetime.datetime.strptime(cache_key, '%Y-%m-%dT%H:%M:%S').timestamp()
-        cache_path = self.web_cache_dir.joinpath(str(cache_key))
+        cache_path = self.fhdhr.web_cache_dir.joinpath(str(cache_key))
         if cache_path.is_file():
-            self.logger.info('FROM CACHE:  ' + str(cache_path))
+            self.fhdhr.logger.info('FROM CACHE:  ' + str(cache_path))
             with open(cache_path, 'rb') as f:
                 return json.load(f)
         else:
-            self.logger.info('Fetching:  ' + url)
-            urlopn = self.web.session.get(url)
+            self.fhdhr.logger.info('Fetching:  ' + url)
+            urlopn = self.fhdhr.web.session.get(url)
             result = urlopn.json()
             with open(cache_path, 'wb') as f:
                 f.write(json.dumps(result).encode("utf-8"))
@@ -140,13 +138,13 @@ class OriginEPG():
     def remove_stale_cache(self, todaydate):
         cache_clear_time = todaydate.strftime('%Y-%m-%dT%H:00:00')
         cache_clear_time = datetime.datetime.strptime(cache_clear_time, '%Y-%m-%dT%H:%M:%S').timestamp()
-        for p in self.web_cache_dir.glob('*'):
+        for p in self.fhdhr.web_cache_dir.glob('*'):
             try:
                 cachedate = float(p.name)
                 if cachedate >= cache_clear_time:
                     continue
             except Exception as e:
-                self.logger.error(e)
+                self.fhdhr.logger.error(e)
                 pass
-            self.logger.info('Removing stale cache file:' + p.name)
+            self.fhdhr.logger.info('Removing stale cache file:' + p.name)
             p.unlink()

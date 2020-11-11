@@ -4,18 +4,16 @@ import m3u8
 
 class OriginChannels():
 
-    def __init__(self, settings, origin, logger, web):
-        self.config = settings
+    def __init__(self, fhdhr, origin):
+        self.fhdhr = fhdhr
         self.origin = origin
-        self.logger = logger
-        self.web = web
 
         self.base_api_url = 'https://api.pluto.tv'
 
     def get_channels(self):
 
         url = self.base_api_url + "/v2/channels.json"
-        urlopn = self.web.session.get(url)
+        urlopn = self.fhdhr.web.session.get(url)
         pluto_chan_list = urlopn.json()
 
         channel_list = []
@@ -41,13 +39,13 @@ class OriginChannels():
         streamdict = {}
 
         url = self.base_api_url + "/v2/channels.json"
-        urlopn = self.web.session.get(url)
+        urlopn = self.fhdhr.web.session.get(url)
         pluto_chan_list = urlopn.json()
         pluto_chandict = self.get_channel_dict_pluto(pluto_chan_list, "_id", chandict["id"])
 
         streamurl = pluto_chandict["stitched"]["urls"][0]["url"]
         streamurl = self.channel_stream_url_cleanup(streamurl)
-        if self.config.dict["origin"]["force_best"]:
+        if self.fhdhr.config.dict["origin"]["force_best"]:
             streamurl = self.m3u8_beststream(streamurl)
         streamdict = {"number": str(chandict["number"]), "stream_url": streamurl}
         streamlist.append(streamdict)
@@ -72,7 +70,7 @@ class OriginChannels():
         paramdict["deviceMake"] = "Chrome"
         paramdict["deviceType"] = "web"
         paramdict["deviceModel"] = "Chrome"
-        paramdict["sid"] = self.config.dict["main"]["uuid"]
+        paramdict["sid"] = self.fhdhr.config.dict["main"]["uuid"]
         paramdict["userId"] = self.origin.userid or ''
 
         return streamurl_base + "?" + urllib.parse.urlencode(paramdict)
