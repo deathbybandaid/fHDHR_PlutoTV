@@ -1,6 +1,4 @@
 import datetime
-import json
-import time
 
 import fHDHR.tools
 
@@ -50,9 +48,9 @@ class OriginEPG():
             xtime = xtime + datetime.timedelta(hours=8)
             time_list.append(guide_time)
 
-        for times in time_list:
-            url = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (times["start"], times["end"])
-            result = self.get_cached(times["start"], 3, url)
+        cached_items = self.get_cached(time_list)
+
+        for result in cached_items:
 
             for c in result:
 
@@ -119,32 +117,48 @@ class OriginEPG():
 
         return programguide
 
-    def get_cached(self, cache_key, delay, url):
+    def get_cached(self, time_list):
+        for times in time_list:
+            url = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (times["start"], times["end"])
+            self.get_cached_item(times["start"], url)
+        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+        return [self.fhdhr.db.get_cacheitem_value(x, "offline_cache", "origin") for x in cache_list]
+
+    def get_cached_item(self, cache_key, url):
         cache_key = datetime.datetime.strptime(cache_key, '%Y-%m-%dT%H:%M:%S').timestamp()
-        cache_path = self.fhdhr.web_cache_dir.joinpath(str(cache_key))
-        if cache_path.is_file():
-            self.fhdhr.logger.info('FROM CACHE:  ' + str(cache_path))
-            with open(cache_path, 'rb') as f:
-                return json.load(f)
+        cacheitem = self.fhdhr.db.get_cacheitem_value(str(cache_key), "offline_cache", "origin")
+        if cacheitem:
+            self.fhdhr.logger.info('FROM CACHE:  ' + str(cache_key))
+            return cacheitem
         else:
             self.fhdhr.logger.info('Fetching:  ' + url)
-            urlopn = self.fhdhr.web.session.get(url)
-            result = urlopn.json()
-            with open(cache_path, 'wb') as f:
-                f.write(json.dumps(result).encode("utf-8"))
-            time.sleep(int(delay))
-            return result
+            try:
+                resp = self.fhdhr.web.session.get(url)
+            except self.fhdhr.web.exceptions.HTTPError:
+                self.fhdhr.logger.info('Got an error!  Ignoring it.')
+                return
+            result = resp.json()
+
+            self.fhdhr.db.set_cacheitem_value(str(cache_key), "offline_cache", result, "origin")
+            cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+            cache_list.append(str(cache_key))
+            self.fhdhr.db.set_cacheitem_value("cache_list", "offline_cache", cache_list, "origin")
 
     def remove_stale_cache(self, todaydate):
         cache_clear_time = todaydate.strftime('%Y-%m-%dT%H:00:00')
         cache_clear_time = datetime.datetime.strptime(cache_clear_time, '%Y-%m-%dT%H:%M:%S').timestamp()
-        for p in self.fhdhr.web_cache_dir.glob('*'):
-            try:
-                cachedate = float(p.name)
-                if cachedate >= cache_clear_time:
-                    continue
-            except Exception as e:
-                self.fhdhr.logger.error(e)
-                pass
-            self.fhdhr.logger.info('Removing stale cache file:' + p.name)
-            p.unlink()
+        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+        cache_to_kill = []
+        for cacheitem in cache_list:
+            if float(cacheitem) < cache_clear_time:
+                cache_to_kill.append(cacheitem)
+                self.fhdhr.db.delete_cacheitem_value(str(cacheitem), "offline_cache", "origin")
+                self.fhdhr.logger.info('Removing stale cache:  ' + str(cacheitem))
+        self.fhdhr.db.set_cacheitem_value("cache_list", "offline_cache", [x for x in cache_list if x not in cache_to_kill], "origin")
+
+    def clear_cache(self):
+        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+        for cacheitem in cache_list:
+            self.fhdhr.db.delete_cacheitem_value(cacheitem, "offline_cache", "origin")
+            self.fhdhr.logger.info('Removing cache:  ' + str(cacheitem))
+        self.fhdhr.db.delete_cacheitem_value("cache_list", "offline_cache", "origin")

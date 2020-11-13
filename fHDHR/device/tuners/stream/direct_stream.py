@@ -1,7 +1,7 @@
-
 import time
-import re
-import urllib.parse
+import m3u8
+
+from Crypto.Cipher import AES
 
 # from fHDHR.exceptions import TunerError
 
@@ -20,7 +20,7 @@ class Direct_Stream():
         if not self.stream_args["duration"] == 0:
             self.stream_args["time_end"] = self.stream_args["duration"] + time.time()
 
-        if not re.match('^(.*m3u8)[\n\r]*$', self.stream_args["channelUri"]):
+        if not self.stream_args["true_content_type"].startswith("application/"):
 
             self.fhdhr.logger.info("Direct Stream of URL: %s" % self.stream_args["channelUri"])
 
@@ -57,15 +57,14 @@ class Direct_Stream():
 
             self.fhdhr.logger.info("Detected stream URL is m3u8: %s" % self.stream_args["true_content_type"])
 
-            # Determine if this m3u8 contains variants or chunks
             channelUri = self.stream_args["channelUri"]
-            self.fhdhr.logger.info("Opening m3u8 URL: %s" % channelUri)
-            m3u8_get = self.fhdhr.web.session.get(self.stream_args["channelUri"])
-            m3u8_content = m3u8_get.text
-            variants = [urllib.parse.urljoin(self.stream_args["channelUri"], line) for line in m3u8_content.split('\n') if re.match('^(.*m3u8)[\n\r]*$', line)]
-            if len(variants):
-                channelUri = variants[0]
-                self.fhdhr.logger.info("m3u8 contained variants. Using URL: %s" % channelUri)
+            while True:
+
+                videoUrlM3u = m3u8.load(channelUri)
+                if len(videoUrlM3u.playlists):
+                    channelUri = videoUrlM3u.playlists[0].absolute_uri
+                else:
+                    break
 
             def generate():
 
@@ -75,30 +74,38 @@ class Direct_Stream():
 
                     while self.tuner.tuner_lock.locked():
 
-                        m3u8_get = self.fhdhr.web.session.get(channelUri)
-                        m3u8_content = m3u8_get.text
-                        chunk_urls_detect = [urllib.parse.urljoin(channelUri, line) for line in m3u8_content.split('\n') if re.match('^(.*ts)[\n\r]*$', line)]
+                        playlist = m3u8.load(channelUri)
+                        segments = playlist.segments
 
-                        chunk_urls_play = []
-                        for chunkurl in chunk_urls_detect:
+                        if playlist.keys != [None]:
+                            keys = [{"url": key.uri, "method": key.method, "iv": key.iv} for key in playlist.keys if key]
+                        else:
+                            keys = [None for i in range(0, len(segments))]
+
+                        for segment, key in zip(segments, keys):
+                            chunkurl = segment.absolute_uri
+
                             if chunkurl not in played_chunk_urls:
-                                chunk_urls_play.append(chunkurl)
-                            played_chunk_urls.append(chunkurl)
+                                played_chunk_urls.append(chunkurl)
 
-                        for chunkurl in chunk_urls_play:
+                                self.fhdhr.logger.info("Passing Through Chunk: %s" % chunkurl)
 
-                            self.fhdhr.logger.info("Passing Through Chunk: %s" % chunkurl)
+                                if (not self.stream_args["duration"] == 0 and
+                                   not time.time() < self.stream_args["time_end"]):
+                                    self.fhdhr.logger.info("Requested Duration Expired.")
+                                    self.tuner.close()
 
-                            if (not self.stream_args["duration"] == 0 and
-                               not time.time() < self.stream_args["time_end"]):
-                                self.fhdhr.logger.info("Requested Duration Expired.")
-                                self.tuner.close()
+                                chunk = self.fhdhr.web.session.get(chunkurl).content
+                                if not chunk:
+                                    break
+                                    # raise TunerError("807 - No Video Data")
+                                if key:
+                                    keyfile = self.fhdhr.web.session.get(key["url"]).content
+                                    cryptor = AES.new(keyfile, AES.MODE_CBC, keyfile)
+                                    chunk = cryptor.decrypt(chunk)
 
-                            chunk = self.fhdhr.web.session.get(chunkurl).content
-                            if not chunk:
-                                break
-                                # raise TunerError("807 - No Video Data")
-                            yield chunk
+                                yield chunk
+
                     self.fhdhr.logger.info("Connection Closed: Tuner Lock Removed")
 
                 except GeneratorExit:
