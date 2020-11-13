@@ -20,14 +20,18 @@ class Direct_Stream():
         if not self.stream_args["duration"] == 0:
             self.stream_args["time_end"] = self.stream_args["duration"] + time.time()
 
-        if not self.stream_args["true_content_type"].startswith("application/"):
+        if not self.stream_args["true_content_type"].startswith(tuple(["application/", "text/"])):
 
-            self.fhdhr.logger.info("Direct Stream of URL: %s" % self.stream_args["channelUri"])
+            self.fhdhr.logger.info("Direct Stream of %s URL: %s" % (self.stream_args["true_content_type"], self.stream_args["channelUri"]))
 
             req = self.fhdhr.web.session.get(self.stream_args["channelUri"], stream=True)
 
             def generate():
+
                 try:
+
+                    chunk_counter = 1
+
                     while self.tuner.tuner_lock.locked():
 
                         for chunk in req.iter_content(chunk_size=self.chunksize):
@@ -41,7 +45,12 @@ class Direct_Stream():
                             if not chunk:
                                 break
                                 # raise TunerError("807 - No Video Data")
+
+                            self.fhdhr.logger.info("Passing Through Chunk #%s with size %s" % (chunk_counter, self.chunksize))
                             yield chunk
+
+                            chunk_counter += 1
+
                     self.fhdhr.logger.info("Connection Closed: Tuner Lock Removed")
 
                 except GeneratorExit:
@@ -77,6 +86,15 @@ class Direct_Stream():
                         playlist = m3u8.load(channelUri)
                         segments = playlist.segments
 
+                        if len(played_chunk_urls):
+                            newsegments = 0
+                            for segment in segments:
+                                if segment.absolute_uri not in played_chunk_urls:
+                                    newsegments += 1
+                            self.fhdhr.logger.info("Refreshing m3u8, Loaded %s new segments." % str(newsegments))
+                        else:
+                            self.fhdhr.logger.info("Loaded %s segments." % str(len(segments)))
+
                         if playlist.keys != [None]:
                             keys = [{"url": key.uri, "method": key.method, "iv": key.iv} for key in playlist.keys if key]
                         else:
@@ -87,8 +105,6 @@ class Direct_Stream():
 
                             if chunkurl not in played_chunk_urls:
                                 played_chunk_urls.append(chunkurl)
-
-                                self.fhdhr.logger.info("Passing Through Chunk: %s" % chunkurl)
 
                                 if (not self.stream_args["duration"] == 0 and
                                    not time.time() < self.stream_args["time_end"]):
@@ -104,7 +120,11 @@ class Direct_Stream():
                                     cryptor = AES.new(keyfile, AES.MODE_CBC, keyfile)
                                     chunk = cryptor.decrypt(chunk)
 
+                                self.fhdhr.logger.info("Passing Through Chunk: %s" % chunkurl)
                                 yield chunk
+
+                        if playlist.target_duration:
+                            time.sleep(int(playlist.target_duration))
 
                     self.fhdhr.logger.info("Connection Closed: Tuner Lock Removed")
 
