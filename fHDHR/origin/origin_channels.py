@@ -34,7 +34,7 @@ class OriginChannels():
         return channel_list
 
     def get_channel_stream(self, chandict, allchandict):
-        caching = True
+        caching = False
         streamlist = []
         streamdict = {}
 
