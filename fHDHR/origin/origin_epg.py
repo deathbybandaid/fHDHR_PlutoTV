@@ -9,7 +9,6 @@ class OriginEPG():
         self.fhdhr = fhdhr
 
         self.base_api_url = 'https://api.pluto.tv'
-        self.fhdhr.web_cache_dir = self.fhdhr.config.dict["filedir"]["epg_cache"]["origin"]["web_cache"]
 
     def xmltimestamp_pluto(self, inputtime):
         xmltime = inputtime.replace('Z', '+00:00')
