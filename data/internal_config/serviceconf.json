@@ -1,0 +1,81 @@
+{
+  "main":{
+          "servicename":{
+                "value": "PlutoTV",
+                "config_file": false,
+                "config_web": false
+                },
+          "dictpopname":{
+                      "value": "plutotv",
+                      "config_file": false,
+                      "config_web": false
+                    },
+          "reponame":{
+                          "value": "fHDHR_PlutoTV",
+                          "config_file": false,
+                          "config_web": false
+                        },
+          "valid_epg_methods":{
+                          "value": "None,blocks,origin",
+                          "config_file": false,
+                          "config_web": false
+                        },
+          "required":{
+                          "value": "none",
+                          "config_file": false,
+                          "config_web": false
+                        }
+  },
+  "fhdhr":{
+          "friendlyname":{
+                    "value": "fHDHR-PlutoTV",
+                    "config_file": true,
+                    "config_web": true
+                },
+          "stream_type":{
+                              "value": "direct",
+                              "config_file": true,
+                              "config_web": true
+                              },
+          "tuner_count":{
+                  "value": 4,
+                  "config_file": true,
+                  "config_web": true
+                },
+          "reporting_firmware_name":{
+                                    "value": "fHDHR_PlutoTV",
+                                    "config_file": true,
+                                    "config_web": true
+                                  }
+  },
+  "epg":{
+          "method":{
+                    "value": "origin",
+                    "config_file": true,
+                    "config_web": true
+                },
+          "update_frequency":{
+                    "value": 43200,
+                    "config_file": true,
+                    "config_web": true
+                }
+  },
+  "plutotv":{
+          "username":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true
+                },
+          "password":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true,
+                    "config_web_hidden": true
+                },
+          "force_best":{
+                    "value": false,
+                    "config_file": true,
+                    "config_web": true
+                }
+  }
+}
