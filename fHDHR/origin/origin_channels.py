@@ -1,5 +1,6 @@
 import urllib.parse
 import m3u8
+import time
 
 
 class OriginChannels():
@@ -64,7 +65,7 @@ class OriginChannels():
         paramdict["deviceMake"] = "Chrome"
         paramdict["deviceType"] = "web"
         paramdict["deviceModel"] = "Chrome"
-        paramdict["sid"] = self.fhdhr.config.dict["main"]["uuid"]
+        paramdict["sid"] = self.fhdhr.config.dict["main"]["uuid"] + str(time.time())
         paramdict["userId"] = self.origin.userid or ''
 
         paramdict["serverSideAds"] = "true"
