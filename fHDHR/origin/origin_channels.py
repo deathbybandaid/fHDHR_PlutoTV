@@ -33,23 +33,17 @@ class OriginChannels():
                 channel_list.append(clean_station_item)
         return channel_list
 
-    def get_channel_stream(self, chandict, allchandict):
-        caching = False
-        streamlist = []
-        streamdict = {}
-
+    def get_channel_stream(self, chandict):
         url = self.base_api_url + "/v2/channels.json"
         urlopn = self.fhdhr.web.session.get(url)
         pluto_chan_list = urlopn.json()
-        pluto_chandict = self.get_channel_dict_pluto(pluto_chan_list, "_id", chandict["id"])
+        pluto_chandict = self.get_channel_dict_pluto(pluto_chan_list, "_id", chandict["origin_id"])
 
         streamurl = pluto_chandict["stitched"]["urls"][0]["url"]
         streamurl = self.channel_stream_url_cleanup(streamurl)
         if self.fhdhr.config.dict["origin"]["force_best"]:
             streamurl = self.m3u8_beststream(streamurl)
-        streamdict = {"number": str(chandict["number"]), "stream_url": streamurl}
-        streamlist.append(streamdict)
-        return streamlist, caching
+        return streamurl
 
     def get_channel_dict_pluto(self, chanlist, keyfind, valfind):
         return next(item for item in chanlist if item[keyfind] == valfind)
