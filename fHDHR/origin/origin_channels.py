@@ -67,6 +67,8 @@ class OriginChannels():
         paramdict["sid"] = self.fhdhr.config.dict["main"]["uuid"]
         paramdict["userId"] = self.origin.userid or ''
 
+        paramdict["serverSideAds"] = "true"
+
         return streamurl_base + "?" + urllib.parse.urlencode(paramdict)
 
     def m3u8_beststream(self, m3u8_url):
