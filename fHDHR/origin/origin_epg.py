@@ -37,7 +37,7 @@ class OriginEPG():
 
         time_list = []
         xtimestart = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-        xtimeend = xtimestart + datetime.timedelta(days=6)
+        xtimeend = xtimestart + datetime.timedelta(days=1)
         xtime = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
         while xtime <= xtimeend:
             guide_time = {
