@@ -37,14 +37,15 @@ class OriginEPG():
 
         time_list = []
         xtimestart = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-        xtimeend = xtimestart + datetime.timedelta(days=1)
-        xtime = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+        xtime = xtimestart
+        xtimeend = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
         while xtime <= xtimeend:
-            guide_time = {
-                            "start": str(xtime.strftime('%Y-%m-%dT%H:00:00')),
-                            "end": str((xtime + datetime.timedelta(hours=8)).strftime('%Y-%m-%dT%H:00:00')),
-                            }
-            xtime = xtime + datetime.timedelta(hours=8)
+            guide_time = {"start": str(xtime.strftime('%Y-%m-%dT%H:00:00'))}
+            if (xtime + datetime.timedelta(hours=6)) <= xtimeend:
+                guide_time["end"] = str((xtime + datetime.timedelta(hours=6)).strftime('%Y-%m-%dT%H:00:00'))
+            else:
+                guide_time["end"] = str(xtimeend.strftime('%Y-%m-%dT%H:00:00'))
+            xtime = xtime + datetime.timedelta(hours=6)
             time_list.append(guide_time)
 
         cached_items = self.get_cached(time_list)
