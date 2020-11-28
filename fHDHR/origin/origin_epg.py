@@ -74,11 +74,19 @@ class OriginEPG():
                                                             "listing": [],
                                                             }
 
-                        try:
-                            thumbnail = cdict["colorLogoPNG"]["path"].split("?")[0]
-                        except TypeError:
-                            thumbnail = None
-                        programguide[str(chandict['number'])]["thumbnail"] = thumbnail
+                        thumbnails = []
+                        for thumb_opt in ["colorLogoPNG", "colorLogoSVG", "solidLogoSVG",
+                                          "solidLogoPNG", "thumbnail", "logo", "featuredImage"]:
+
+                            try:
+                                thumbnail = cdict[thumb_opt]["path"].split("?")[0]
+                            except TypeError:
+                                thumbnail = None
+                            if thumbnail:
+                                thumbnails.append(thumbnail)
+                        if not len(thumbnails):
+                            thumbnails = [None]
+                        programguide[str(chandict['number'])]["thumbnail"] = thumbnails[0]
 
                     for program_item in cdict["timelines"]:
 
