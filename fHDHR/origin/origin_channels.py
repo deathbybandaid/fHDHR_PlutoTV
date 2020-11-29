@@ -25,11 +25,25 @@ class OriginChannels():
                and not channel_dict['onDemand']
                and channel_dict["name"] != "Announcement"):
 
+                thumbnails = []
+                for thumb_opt in ["colorLogoPNG", "colorLogoSVG", "solidLogoSVG",
+                                  "solidLogoPNG", "thumbnail", "logo", "featuredImage"]:
+
+                    try:
+                        thumbnail = channel_dict[thumb_opt]["path"].split("?")[0]
+                    except TypeError:
+                        thumbnail = None
+                    if thumbnail:
+                        thumbnails.append(thumbnail)
+                if not len(thumbnails):
+                    thumbnails = [None]
+
                 clean_station_item = {
                                      "name": channel_dict["name"],
                                      "callsign": channel_dict["name"],
                                      "number": str(channel_dict["number"]),
                                      "id": str(channel_dict["_id"]),
+                                     "thumbnail": thumbnails[0]
                                      }
                 channel_list.append(clean_station_item)
         return channel_list
