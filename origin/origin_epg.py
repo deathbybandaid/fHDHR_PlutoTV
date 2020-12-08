@@ -61,32 +61,11 @@ class OriginEPG():
 
                     cdict = fHDHR.tools.xmldictmaker(c, ["name", "number", "_id", "timelines", "colorLogoPNG"], list_items=["timelines"])
 
-                    chandict = fhdhr_channels.get_channel_dict("origin_id", cdict["_id"])
+                    chan_obj = fhdhr_channels.get_channel_obj("origin_id", cdict["_id"])
 
-                    if str(chandict['number']) not in list(programguide.keys()):
+                    if str(chan_obj.dict['number']) not in list(programguide.keys()):
 
-                        programguide[str(chandict['number'])] = {
-                                                            "callsign": chandict["callsign"],
-                                                            "name": chandict["name"] or chandict["callsign"],
-                                                            "number": chandict["number"],
-                                                            "id": str(chandict["origin_id"]),
-                                                            "thumbnail": None,
-                                                            "listing": [],
-                                                            }
-
-                        thumbnails = []
-                        for thumb_opt in ["colorLogoPNG", "colorLogoSVG", "solidLogoSVG",
-                                          "solidLogoPNG", "thumbnail", "logo", "featuredImage"]:
-
-                            try:
-                                thumbnail = cdict[thumb_opt]["path"].split("?")[0]
-                            except TypeError:
-                                thumbnail = None
-                            if thumbnail:
-                                thumbnails.append(thumbnail)
-                        if not len(thumbnails):
-                            thumbnails = [None]
-                        programguide[str(chandict['number'])]["thumbnail"] = thumbnails[0]
+                        programguide[str(chan_obj.dict["number"])] = chan_obj.epgdict
 
                     for program_item in cdict["timelines"]:
 
@@ -124,7 +103,7 @@ class OriginEPG():
                         clean_prog_dict["genres"].extend(episodedict["genre"].split(" \\u0026 "))
                         clean_prog_dict["genres"].append(episodedict["subGenre"])
 
-                        programguide[str(chandict["number"])]["listing"].append(clean_prog_dict)
+                        programguide[str(chan_obj.dict["number"])]["listing"].append(clean_prog_dict)
 
         return programguide
 
