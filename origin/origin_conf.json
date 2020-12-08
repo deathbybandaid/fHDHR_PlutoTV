@@ -14,16 +14,6 @@
                           "value": "fHDHR_PlutoTV",
                           "config_file": false,
                           "config_web": false
-                        },
-          "valid_epg_methods":{
-                          "value": "None,blocks,origin",
-                          "config_file": false,
-                          "config_web": false
-                        },
-          "required":{
-                          "value": "none",
-                          "config_file": false,
-                          "config_web": false
                         }
   },
   "fhdhr":{
@@ -31,16 +21,6 @@
                     "value": "fHDHR-PlutoTV",
                     "config_file": true,
                     "config_web": true
-                },
-          "stream_type":{
-                              "value": "direct",
-                              "config_file": true,
-                              "config_web": true
-                              },
-          "tuner_count":{
-                  "value": 4,
-                  "config_file": true,
-                  "config_web": true
                 },
           "reporting_firmware_name":{
                                     "value": "fHDHR_PlutoTV",
@@ -58,7 +38,12 @@
                     "value": 14400,
                     "config_file": true,
                     "config_web": true
-                }
+                },
+          "valid_epg_methods":{
+                          "value": "None,blocks,origin",
+                          "config_file": false,
+                          "config_web": false
+                        }
   },
   "plutotv":{
           "username":{
