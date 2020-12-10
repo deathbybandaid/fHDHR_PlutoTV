@@ -39,10 +39,3 @@ class OriginService():
         self.userid = loginresp["_id"]
         self.token = loginresp["accessToken"]
         return True
-
-    def get_status_dict(self):
-        ret_status_dict = {
-                            "Login": "Success" if self.userid else "Guest Mode",
-                            "Username": self.fhdhr.config.dict["origin"]["username"],
-                            }
-        return ret_status_dict
