@@ -12,8 +12,7 @@ class OriginEPG():
 
     def xmltimestamp_pluto(self, inputtime):
         xmltime = inputtime.replace('Z', '+00:00')
-        xmltime = datetime.datetime.fromisoformat(xmltime)
-        xmltime = xmltime.strftime('%Y%m%d%H%M%S %z')
+        xmltime = datetime.datetime.fromisoformat(xmltime).timestamp()
         return xmltime
 
     def duration_pluto_minutes(self, induration):
@@ -72,38 +71,40 @@ class OriginEPG():
                         progdict = fHDHR.tools.xmldictmaker(program_item, ['_id', 'start', 'stop', 'title', 'episode'])
                         episodedict = fHDHR.tools.xmldictmaker(program_item['episode'], ['duration', 'poster', '_id', 'rating', 'description', 'genre', 'subGenre', 'name'])
 
-                        if not episodedict["duration"]:
-                            episodedict["duration"] = self.pluto_calculate_duration(progdict["start"], progdict["stop"])
-                        else:
+                        # if not episodedict["duration"]:
+                        #    episodedict["duration"] = self.pluto_calculate_duration(progdict["start"], progdict["stop"])
+                        # else:
+                        if episodedict["duration"]:
                             episodedict["duration"] = self.duration_pluto_minutes(episodedict["duration"])
 
-                        clean_prog_dict = {
-                                            "time_start": self.xmltimestamp_pluto(progdict["start"]),
-                                            "time_end": self.xmltimestamp_pluto(progdict["stop"]),
-                                            "duration_minutes": episodedict["duration"],
-                                            "thumbnail": None,
-                                            "title": progdict['title'] or "Unavailable",
-                                            "sub-title": episodedict['name'] or "Unavailable",
-                                            "description": episodedict['description'] or "Unavailable",
-                                            "rating": episodedict['rating'] or "N/A",
-                                            "episodetitle": None,
-                                            "releaseyear": None,
-                                            "genres": [],
-                                            "seasonnumber": None,
-                                            "episodenumber": None,
-                                            "isnew": False,
-                                            "id": episodedict['_id'] or self.xmltimestamp_pluto(progdict["start"]),
-                                            }
-                        try:
-                            thumbnail = episodedict["poster"]["path"].split("?")[0]
-                        except TypeError:
-                            thumbnail = None
-                        clean_prog_dict["thumbnail"] = thumbnail
+                            clean_prog_dict = {
+                                                "time_start": self.xmltimestamp_pluto(progdict["start"]),
+                                                "time_end": self.xmltimestamp_pluto(progdict["stop"]),
+                                                "duration_minutes": episodedict["duration"],
+                                                "thumbnail": None,
+                                                "title": progdict['title'] or "Unavailable",
+                                                "sub-title": episodedict['name'] or "Unavailable",
+                                                "description": episodedict['description'] or "Unavailable",
+                                                "rating": episodedict['rating'] or "N/A",
+                                                "episodetitle": None,
+                                                "releaseyear": None,
+                                                "genres": [],
+                                                "seasonnumber": None,
+                                                "episodenumber": None,
+                                                "isnew": False,
+                                                "id": str(episodedict['_id'] or "%s_%s" % (chan_obj.dict['origin_id'], self.xmltimestamp_pluto(progdict["start"])))
+                                                }
+                            try:
+                                thumbnail = episodedict["poster"]["path"].split("?")[0]
+                            except TypeError:
+                                thumbnail = None
+                            clean_prog_dict["thumbnail"] = thumbnail
 
-                        clean_prog_dict["genres"].extend(episodedict["genre"].split(" \\u0026 "))
-                        clean_prog_dict["genres"].append(episodedict["subGenre"])
+                            clean_prog_dict["genres"].extend(episodedict["genre"].split(" \\u0026 "))
+                            clean_prog_dict["genres"].append(episodedict["subGenre"])
 
-                        programguide[str(chan_obj.dict["number"])]["listing"].append(clean_prog_dict)
+                            if not any((d['time_start'] == clean_prog_dict['time_start'] and d['id'] == clean_prog_dict['id']) for d in programguide[chan_obj.number]["listing"]):
+                                programguide[str(chan_obj.dict["number"])]["listing"].append(clean_prog_dict)
 
         return programguide
 
@@ -111,12 +112,12 @@ class OriginEPG():
         for times in time_list:
             url = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (times["start"], times["end"])
             self.get_cached_item(times["start"], url)
-        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
-        return [self.fhdhr.db.get_cacheitem_value(x, "offline_cache", "origin") for x in cache_list]
+        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "epg_cache", "origin") or []
+        return [self.fhdhr.db.get_cacheitem_value(x, "epg_cache", "origin") for x in cache_list]
 
     def get_cached_item(self, cache_key, url):
         cache_key = datetime.datetime.strptime(cache_key, '%Y-%m-%dT%H:%M:%S').timestamp()
-        cacheitem = self.fhdhr.db.get_cacheitem_value(str(cache_key), "offline_cache", "origin")
+        cacheitem = self.fhdhr.db.get_cacheitem_value(str(cache_key), "epg_cache", "origin")
         if cacheitem:
             self.fhdhr.logger.info('FROM CACHE:  ' + str(cache_key))
             return cacheitem
@@ -129,26 +130,26 @@ class OriginEPG():
                 return
             result = resp.json()
 
-            self.fhdhr.db.set_cacheitem_value(str(cache_key), "offline_cache", result, "origin")
-            cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+            self.fhdhr.db.set_cacheitem_value(str(cache_key), "epg_cache", result, "origin")
+            cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "epg_cache", "origin") or []
             cache_list.append(str(cache_key))
-            self.fhdhr.db.set_cacheitem_value("cache_list", "offline_cache", cache_list, "origin")
+            self.fhdhr.db.set_cacheitem_value("cache_list", "epg_cache", cache_list, "origin")
 
     def remove_stale_cache(self, todaydate):
         cache_clear_time = todaydate.strftime('%Y-%m-%dT%H:00:00')
         cache_clear_time = datetime.datetime.strptime(cache_clear_time, '%Y-%m-%dT%H:%M:%S').timestamp()
-        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "epg_cache", "origin") or []
         cache_to_kill = []
         for cacheitem in cache_list:
             if float(cacheitem) < cache_clear_time:
                 cache_to_kill.append(cacheitem)
-                self.fhdhr.db.delete_cacheitem_value(str(cacheitem), "offline_cache", "origin")
+                self.fhdhr.db.delete_cacheitem_value(str(cacheitem), "epg_cache", "origin")
                 self.fhdhr.logger.info('Removing stale cache:  ' + str(cacheitem))
-        self.fhdhr.db.set_cacheitem_value("cache_list", "offline_cache", [x for x in cache_list if x not in cache_to_kill], "origin")
+        self.fhdhr.db.set_cacheitem_value("cache_list", "epg_cache", [x for x in cache_list if x not in cache_to_kill], "origin")
 
     def clear_cache(self):
-        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "offline_cache", "origin") or []
+        cache_list = self.fhdhr.db.get_cacheitem_value("cache_list", "epg_cache", "origin") or []
         for cacheitem in cache_list:
-            self.fhdhr.db.delete_cacheitem_value(cacheitem, "offline_cache", "origin")
+            self.fhdhr.db.delete_cacheitem_value(cacheitem, "epg_cache", "origin")
             self.fhdhr.logger.info('Removing cache:  ' + str(cacheitem))
-        self.fhdhr.db.delete_cacheitem_value("cache_list", "offline_cache", "origin")
+        self.fhdhr.db.delete_cacheitem_value("cache_list", "epg_cache", "origin")
