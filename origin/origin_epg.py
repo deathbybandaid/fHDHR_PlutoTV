@@ -64,7 +64,7 @@ class OriginEPG():
 
                     if str(chan_obj.dict['number']) not in list(programguide.keys()):
 
-                        programguide[str(chan_obj.dict["number"])] = chan_obj.epgdict
+                        programguide[str(chan_obj.number)] = chan_obj.epgdict
 
                     for program_item in cdict["timelines"]:
 
@@ -104,7 +104,7 @@ class OriginEPG():
                             clean_prog_dict["genres"].append(episodedict["subGenre"])
 
                             if not any((d['time_start'] == clean_prog_dict['time_start'] and d['id'] == clean_prog_dict['id']) for d in programguide[chan_obj.number]["listing"]):
-                                programguide[str(chan_obj.dict["number"])]["listing"].append(clean_prog_dict)
+                                programguide[str(chan_obj.number)]["listing"].append(clean_prog_dict)
 
         return programguide
 
