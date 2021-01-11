@@ -7,7 +7,7 @@ class OriginService():
         self.fhdhr = fhdhr
 
         self.base_api_url = 'https://api.pluto.tv'
-        self.login_url = self.base_api_url + '/v1/auth/local'
+        self.login_url = "%s/v1/auth/local" % self.base_api_url
 
         self.token = None
         self.userid = None
@@ -34,7 +34,7 @@ class OriginService():
                 return True
             self.fhdhr.logger.info("Login Success!")
         except Exception as e:
-            self.fhdhr.logger.warning("Login Failed, will use Guest Mode. " + str(e))
+            self.fhdhr.logger.warning("Login Failed, will use Guest Mode. %s" % e)
             return True
         self.userid = loginresp["_id"]
         self.token = loginresp["accessToken"]

@@ -28,7 +28,7 @@ class OriginEPG():
                     "end": str((xtime + datetime.timedelta(hours=8)).strftime('%Y-%m-%dT%H:00:00')),
                     }
 
-        epgurl = self.base_api_url + '/v2/channels?start=%s.000Z&stop=%s.000Z' % (guide_time["start"], guide_time["end"])
+        epgurl = '%s/v2/channels?start=%s.000Z&stop=%s.000Z' % (self.base_api_url, guide_time["start"], guide_time["end"])
 
         result = self.fhdhr.web.session.get(epgurl).json()
 

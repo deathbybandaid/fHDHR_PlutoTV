@@ -13,7 +13,7 @@ class OriginChannels():
 
     def get_channels(self):
 
-        url = self.base_api_url + "/v2/channels.json"
+        url = "%s/v2/channels.json" % self.base_api_url
         urlopn = self.fhdhr.web.session.get(url)
         pluto_chan_list = urlopn.json()
 
@@ -49,7 +49,7 @@ class OriginChannels():
         return channel_list
 
     def get_channel_stream(self, chandict, stream_args):
-        url = self.base_api_url + "/v2/channels.json"
+        url = "%s/v2/channels.json" % self.base_api_url
         urlopn = self.fhdhr.web.session.get(url)
         pluto_chan_list = urlopn.json()
         pluto_chandict = self.get_channel_dict_pluto(pluto_chan_list, "_id", chandict["origin_id"])
@@ -87,7 +87,7 @@ class OriginChannels():
 
         paramdict["serverSideAds"] = "true"
 
-        return streamurl_base + "?" + urllib.parse.urlencode(paramdict)
+        return "%s?%s" % (streamurl_base, urllib.parse.urlencode(paramdict))
 
     def m3u8_beststream(self, m3u8_url):
         bestStream = None
