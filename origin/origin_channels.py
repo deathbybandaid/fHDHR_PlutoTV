@@ -52,7 +52,9 @@ class OriginChannels():
         url = "%s/v2/channels.json" % self.base_api_url
         urlopn = self.fhdhr.web.session.get(url)
         pluto_chan_list = urlopn.json()
-        pluto_chandict = self.get_channel_dict_pluto(pluto_chan_list, "_id", chandict["origin_id"])
+        pluto_chandict = self.get_channel_dict_pluto(pluto_chan_list, chandict)
+        if not pluto_chandict:
+            return None
 
         streamurl = pluto_chandict["stitched"]["urls"][0]["url"]
         streamurl = self.channel_stream_url_cleanup(streamurl)
@@ -63,8 +65,14 @@ class OriginChannels():
 
         return stream_info
 
-    def get_channel_dict_pluto(self, chanlist, keyfind, valfind):
-        return next(item for item in chanlist if item[keyfind] == valfind)
+    def get_channel_dict_pluto(self, pluto_chan_list, chandict):
+        for item in pluto_chan_list:
+            if str(item["_id"]) == str(chandict["origin_id"]):
+                return item
+        for item in pluto_chan_list:
+            if str(item["number"]) == str(chandict["origin_number"]):
+                return item
+        return None
 
     def channel_stream_url_cleanup(self, streamurl):
 
