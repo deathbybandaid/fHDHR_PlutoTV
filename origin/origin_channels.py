@@ -108,6 +108,9 @@ class OriginChannels():
                 bestStream = videoStream
             elif videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth:
                 bestStream = videoStream
+            print(videoStream.stream_info.resolution)
+            print(videoStream.stream_info.resolution[0])
+            print(videoStream.stream_info.resolution[1])
 
         if not bestStream:
             return bestStream.absolute_uri
