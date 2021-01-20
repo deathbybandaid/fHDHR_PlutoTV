@@ -1,5 +1,4 @@
 import urllib.parse
-import m3u8
 import time
 
 
@@ -58,8 +57,6 @@ class OriginChannels():
 
         streamurl = pluto_chandict["stitched"]["urls"][0]["url"]
         streamurl = self.channel_stream_url_cleanup(streamurl)
-        if self.fhdhr.config.dict["origin"]["force_best"]:
-            streamurl = self.m3u8_beststream(streamurl)
 
         stream_info = {"url": streamurl}
 
@@ -96,20 +93,3 @@ class OriginChannels():
         paramdict["serverSideAds"] = "true"
 
         return "%s?%s" % (streamurl_base, urllib.parse.urlencode(paramdict))
-
-    def m3u8_beststream(self, m3u8_url):
-        bestStream = None
-        videoUrlM3u = m3u8.load(m3u8_url)
-        if not videoUrlM3u.is_variant:
-            return m3u8_url
-
-        for videoStream in videoUrlM3u.playlists:
-            if not bestStream:
-                bestStream = videoStream
-            elif videoStream.stream_info.bandwidth > bestStream.stream_info.bandwidth:
-                bestStream = videoStream
-
-        if not bestStream:
-            return bestStream.absolute_uri
-        else:
-            return m3u8_url
