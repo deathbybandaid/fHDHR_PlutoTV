@@ -38,12 +38,7 @@
                     "value": 14400,
                     "config_file": true,
                     "config_web": true
-                },
-          "valid_epg_methods":{
-                          "value": "None,blocks,origin",
-                          "config_file": false,
-                          "config_web": false
-                        }
+                }
   },
   "plutotv":{
           "username":{
@@ -56,11 +51,6 @@
                     "config_file": true,
                     "config_web": true,
                     "config_web_hidden": true
-                },
-          "force_best":{
-                    "value": false,
-                    "config_file": true,
-                    "config_web": true
                 }
   }
 }
