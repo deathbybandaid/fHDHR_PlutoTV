@@ -1,0 +1,15 @@
+{
+  "plutotv":{
+          "username":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true
+                },
+          "password":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true,
+                    "config_web_hidden": true
+                }
+  }
+}
